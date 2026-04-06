@@ -5,7 +5,7 @@ from datetime import datetime
 class OrderRepository:
 
     async def create_order(self, order_data: dict):
-        order_data["created_at"] = datetime.utcnow()
+        #order_data["created_at"] = datetime.utcnow()
         result = await db.orders.insert_one(order_data)
         return result.inserted_id
 

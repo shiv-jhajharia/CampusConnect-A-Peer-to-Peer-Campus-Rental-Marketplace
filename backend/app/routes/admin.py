@@ -40,15 +40,86 @@ async def get_all_payments(admin: dict = Depends(get_current_admin)):
         payments.append(payment)
     return payments
 
+#Getting single user view
+@router.get("/user/{user_id}")
+async def get_single_user(user_id: str, admin: dict = Depends(get_current_admin)):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user["_id"] = str(user["_id"])
+
+    products = await db.products.find({"owner_id": user_id}).to_list(50)
+    orders = await db.orders.find({"user_id": user_id}).to_list(50)
+
+    return {
+        "user": user,
+        "products": products,
+        "orders": orders
+    }
+
+
+#Getting users-full
+@router.get("/users-full")
+async def get_users_full(admin: dict = Depends(get_current_admin)):
+    result = []
+
+    async for user in db.users.find():
+        user_id = str(user["_id"])
+
+        # Convert user id
+        user["_id"] = user_id
+
+        # 🔍 Get related data
+        products = await db.products.find({"owner_id": user_id}).to_list(50)
+        orders = await db.orders.find({"user_id": user_id}).to_list(50)
+
+        # Convert IDs
+        for p in products:
+            p["_id"] = str(p["_id"])
+
+        for o in orders:
+            o["_id"] = str(o["_id"])
+
+        result.append({
+            "user": user,
+            "products": products,
+            "orders": orders
+        })
+
+    return result
+
+#Getting Admin DashBoard Stats
+@router.get("/stats")
+async def get_stats(admin: dict = Depends(get_current_admin)):
+    return {
+        "total_users": await db.users.count_documents({}),
+        "total_products": await db.products.count_documents({}),
+        "total_orders": await db.orders.count_documents({}),
+        "total_payments": await db.payments.count_documents({})
+    }
+
+
 #Deleting User
 from bson import ObjectId
 from fastapi import HTTPException
 
 @router.delete("/user/{user_id}")
 async def delete_user(user_id: str, admin: dict = Depends(get_current_admin)):
-    result = await db.users.delete_one({"_id": ObjectId(user_id)})
+    user_obj_id = ObjectId(user_id)
+
+    # Delete user
+    result = await db.users.delete_one({"_id": user_obj_id})
 
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"message": "User deleted"}
+    # 🔥 Delete related data
+    await db.products.delete_many({"owner_id": user_id})
+    await db.orders.delete_many({"user_id": user_id})
+
+    # Optional: delete payments linked to orders
+    await db.payments.delete_many({"user_id": user_id})
+
+    return {"message": "User and related data deleted"}

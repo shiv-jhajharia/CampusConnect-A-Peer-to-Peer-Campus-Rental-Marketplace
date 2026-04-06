@@ -8,8 +8,8 @@ class PaymentService:
 
     @staticmethod
     async def mark_success(payment_id):
-        await PaymentRepository.update_status(payment_id, "success")
+        await PaymentRepository.update_status(payment_id, "released")
 
     @staticmethod
     async def mark_failed(payment_id):
-        await PaymentRepository.update_status(payment_id, "failed")
+        await PaymentRepository.update_status(payment_id, "refunded")

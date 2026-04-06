@@ -12,17 +12,24 @@ class ProductRepository:
 
     async def get_all_products(self):
         products = []
+
         async for product in products_collection.find():
             product["id"] = str(product["_id"])
+            del product["_id"]
             products.append(product)
+            
         return products
 
     async def get_product_by_id(self, product_id: str):
+        from bson import ObjectId
+
         product = await products_collection.find_one(
             {"_id": ObjectId(product_id)}
         )
         if product:
             product["id"] = str(product["_id"])
+            del product["_id"]
+
         return product
 
     async def update_product(self, product_id: str, data: dict):

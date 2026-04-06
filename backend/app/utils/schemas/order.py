@@ -1,20 +1,19 @@
 from pydantic import BaseModel
-from typing import List
-from datetime import datetime
-
-
-class OrderItem(BaseModel):
-    product_id: str
-    quantity: int
-
+from datetime import date,datetime
 
 class OrderCreate(BaseModel):
-    items: List[OrderItem]
+    product_id: str
+    start_date: date
+    end_date: date
 
 
 class OrderOut(BaseModel):
     id: str
     user_id: str
-    items: List[OrderItem]
+    product_id: str
+    start_date: date
+    end_date: date
+    days: int
     total_price: float
+    status: str
     created_at: datetime

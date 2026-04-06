@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # ==============================
+    # 🔹 Cloudinary Settings
+    # ==============================
+    CLOUD_NAME: str
+    API_KEY: str
+    API_SECRET: str
+    
+    # ==============================
     # 🔹 Optional (Future Use)
     # ==============================
     # REFRESH_TOKEN_EXPIRE_DAYS: int = 7
