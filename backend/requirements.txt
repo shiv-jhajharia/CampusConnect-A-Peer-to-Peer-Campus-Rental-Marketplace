@@ -18,7 +18,7 @@ google-auth==2.29.0
 google-auth-oauthlib==1.2.0
 
 # ── Image Upload ──
-cloudinary==1.40.0
+cloudinary==1.44.1
 python-multipart==0.0.9
 
 # ── Data Validation ──
