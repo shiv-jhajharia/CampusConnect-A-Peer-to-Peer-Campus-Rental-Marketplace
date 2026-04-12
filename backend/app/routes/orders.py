@@ -22,6 +22,10 @@ async def create_order(order: OrderCreate, current_user=Depends(get_current_user
 async def get_my_orders(current_user=Depends(get_current_user)):
     return await service.get_user_orders(str(current_user["_id"]))
 
+@router.get("/sales")
+async def get_my_sales(current_user=Depends(get_current_user)):
+    return await service.get_user_sales(str(current_user["_id"]))
+
 
 @router.get("/{order_id}")
 async def get_order(order_id: str, current_user=Depends(get_current_user)):

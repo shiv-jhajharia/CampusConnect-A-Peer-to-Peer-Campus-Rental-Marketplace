@@ -1,95 +1,6 @@
-/*import React from "react";
-//925682492325-kqgprm0nem7kgo03vrhke8gk70m50de7.apps.googleusercontent.com
-export default function Login() {
-  const handleGoogleLogin = () => {
-    // later you will connect this to Google OAuth
-    alert("Redirecting to Google Login...");
-  };
-
-  return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-96 text-center">
-        
-        <h1 className="text-2xl font-bold text-blue-600 mb-2">
-          CampusRent
-        </h1>
-
-        <p className="text-gray-600 mb-6">
-          Secure Campus Rental Platform
-        </p>
-
-        {/* Important Note *//*}
-        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-6 text-sm">
-          ⚠️ Please use your <b>college email ID</b> to login
-        </div>
-
-        {/* Google Button *//*}
-        <button
-          onClick={handleGoogleLogin}
-          className="flex items-center justify-center gap-3 w-full border-none p-3 hover:bg-gray-200 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-        >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="google"
-            className="w-5 h-5"
-          />
-          <span className="font-medium">Login with Google</span>
-        </button>
-
-        {/* Footer *//*}
-        <p className="text-xs text-gray-500 mt-6">
-          Only verified college students can access this platform
-        </p>
-      </div>
-    </div>
-  );
-}
-
-
-import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
-
-export default function Login() {
-
-  const handleSuccess = async (credentialResponse) => {
-    const token = credentialResponse.credential;
-
-    const res = await fetch("http://127.0.0.1:8000/google", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ token })
-    });
-
-    const data = await res.json();
-
-    localStorage.setItem("token", data.access_token);
-    console.log(data.access_token)
-
-    alert("Login Successful 🚀");
-  };
-
-  return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow text-center">
-
-        <h2 className="text-xl font-bold mb-4">CampusRent</h2>
-
-        <GoogleLogin
-          onSuccess={handleSuccess}
-          onError={() => alert("Login Failed")}
-        />
-
-      </div>
-    </div>
-  );
-}*/
 import React, { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import Loader from "./components/Loader";
 import { API_URL } from "./config";
 
 export default function Login() {
@@ -97,121 +8,119 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+
   const handleSuccess = async (credentialResponse) => {
     setLoading(true);
-
     try {
       const token = credentialResponse.credential;
-      console.log(token)
-
       const res = await fetch(`${API_URL}/auth/google-login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ 
-          token,
-          role: isAdmin ? "admin" : "user"
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, role: isAdmin ? "admin" : "user" })
       });
       const data = await res.json();
 
-      /*if (!res.ok) {
-        console.error("Backend Response: ",data)
-        setErrorMsg(data.detail || "Login Failed");
-        setTimeout(() => setErrorMsg(""), 5000);
-
-        return;
-      }*/
-
       if (!res.ok) {
-        let errorText = "Login Failed";
-
-        // ✅ Use already parsed data
-        errorText = data.detail || errorText;
-
-        // 🔥 Admin-specific message
+        let errorText = data.detail || "Login Failed";
         if (isAdmin && errorText === "Not an admin") {
           errorText = "❌ You are not authorized as Admin";
         }
-
         setErrorMsg(errorText);
         setTimeout(() => setErrorMsg(""), 5000);
         return;
       }
 
-      // Save JWT
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("role", data.role);
-
-      // 🔥 Role-based redirect
-      if (data.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
-
+      navigate(data.role === "admin" ? "/admin" : "/dashboard");
     } catch (error) {
-      console.error("Network Error:", error)
+      console.error(error);
       setErrorMsg("Server not reachable");
       setTimeout(() => setErrorMsg(""), 5000);
-
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-96 text-center">
-        
-        <h1 className="text-2xl font-bold text-blue-600 mb-2">
-          CampusRent
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 overflow-hidden relative">
+      {/* Background Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-600/30 blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-purple-600/30 blur-[100px] pointer-events-none"></div>
 
-        <p className="text-gray-600 mb-6">
-          Secure Campus Rental Platform
-        </p>
-
-        {/* Warning */}
-        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-6 text-sm">
-          ⚠️ Use your <b>college email only</b>
+      <div className="glass-dark w-full max-w-5xl rounded-3xl flex flex-col md:flex-row overflow-hidden z-10 m-4 shadow-2xl relative">
+        {/* Left Side: Branding / Graphic */}
+        <div className="md:w-1/2 p-12 flex flex-col justify-center relative bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-r border-white/5">
+          <h1 className="text-5xl font-extrabold text-white tracking-tight mb-4 text-shadow">
+            CampusRent
+          </h1>
+          <p className="text-indigo-200 text-lg mb-8 max-w-md leading-relaxed">
+            The secure, peer-to-peer rental marketplace designed exclusively for verified students.
+          </p>
+          <div className="space-y-4">
+             <div className="flex items-center text-blue-100/80">
+               <svg className="w-5 h-5 mr-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+               Strictly verified college emails
+             </div>
+             <div className="flex items-center text-blue-100/80">
+               <svg className="w-5 h-5 mr-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+               Escrow-backed secure payments
+             </div>
+             <div className="flex items-center text-blue-100/80">
+               <svg className="w-5 h-5 mr-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+               No double bookings allowed
+             </div>
+          </div>
         </div>
 
-        {errorMsg && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm animate-pulse">
-            {errorMsg}
+        {/* Right Side: Login Panel */}
+        <div className="md:w-1/2 p-10 md:p-16 flex flex-col justify-center bg-slate-900/50">
+          <div className="mb-10 text-center md:text-left">
+            <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+            <p className="text-slate-400">Sign in to continue to your dashboard.</p>
           </div>
-        )}
-        
-        {loading ? (
-          //<p className="text-blue-500 font-semibold">Loading...</p>
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          <>
-          <GoogleLogin
-            onSuccess={handleSuccess}
-            onError={() => alert("Login Failed")}
-          />
-          <div className="mt-4">
-              <b>--------------------------------------------------</b>
+
+          {errorMsg && (
+            <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm backdrop-blur-sm shadow-xl flex items-center">
+              <span className="mr-2">⚠️</span> {errorMsg}
+            </div>
+          )}
+
+          <div className="bg-blue-500/10 border border-blue-500/20 text-blue-300 p-4 rounded-xl mb-8 text-sm backdrop-blur-sm">
+            <p className="flex items-center justify-center md:justify-start">
+              <span>🔒 Use your <b>college email only</b></span>
+            </p>
+          </div>
+
+          <div className="flex justify-center md:justify-start min-h-[50px] items-center">
+            {loading ? (
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <div className="relative z-20 w-auto hover:scale-105 transition-transform">
+                <GoogleLogin
+                  onSuccess={handleSuccess}
+                  onError={() => setErrorMsg("Login failed locally.")}
+                  theme="filled_black"
+                  shape="pill"
+                  size="large"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-white/10">
             <button
               onClick={() => setIsAdmin(!isAdmin)}
-              className={`w-full p-2 rounded mt-4 ${
-                isAdmin ? "bg-green-600" : "bg-gray-900"
-              } text-white`}
+              className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 border ${
+                isAdmin 
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30" 
+                  : "bg-slate-800/50 border-white/10 text-slate-300 hover:bg-slate-800"
+              }`}
             >
-              {isAdmin ? "ADMIN MODE ON ✅" : "LOGIN AS ADMIN⬆️"}
+              {isAdmin ? "🔒 ADMIN MODE ACTIVE" : "🛡️ LOGIN AS ADMIN"}
             </button>
           </div>
-          </>
-        )}
-
-        <p className="text-xs text-gray-500 mt-6">
-          Only verified students allowed
-        </p>
-
+        </div>
       </div>
     </div>
   );

@@ -13,8 +13,34 @@ class ProductService:
 
         return await repo.create_product(data)
 
-    async def get_products(self):
-        return await repo.get_all_products()
+    async def get_products(self, search: str = None, category: str = None,
+                           min_price: float = None, max_price: float = None):
+        query = {}
+
+        # Search across name and category with the same keyword
+        if search:
+            query["$or"] = [
+                {"name":     {"$regex": search, "$options": "i"}},
+                {"category": {"$regex": search, "$options": "i"}},
+            ]
+
+        # Exact category filter from the dropdown (overrides search match on category)
+        if category and category != "All":
+            query["category"] = category
+
+        # Price range filter
+        if min_price is not None or max_price is not None:
+            price_filter = {}
+            if min_price is not None:
+                price_filter["$gte"] = min_price
+            if max_price is not None:
+                price_filter["$lte"] = max_price
+            query["price"] = price_filter
+
+        return await repo.get_all_products(query)
+
+    async def get_my_products(self, user):
+        return await repo.get_all_products({"owner_id": str(user["_id"])})
 
     async def get_product(self, product_id: str):
         return await repo.get_product_by_id(product_id)

@@ -56,7 +56,11 @@ async def google_login(data: GoogleToken):
                 "name": idinfo.get("name"),
                 "picture": idinfo.get("picture"),
                 "auth_type": "google",
-                "role": role   # 👈 store role
+                "role": role,
+                "created_at": datetime.utcnow(),
+                "ratings_sum": 0.0,
+                "ratings_count": 0,
+                "fraud_reports": 0
             })
             user = await db.users.find_one({"_id": result.inserted_id})
             

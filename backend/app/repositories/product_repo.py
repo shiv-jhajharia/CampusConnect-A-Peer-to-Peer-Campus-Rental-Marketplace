@@ -10,10 +10,11 @@ class ProductRepository:
         result = await products_collection.insert_one(data)
         return str(result.inserted_id)
 
-    async def get_all_products(self):
+    async def get_all_products(self, query: dict = None):
         products = []
+        filter_q = query if query else {}
 
-        async for product in products_collection.find():
+        async for product in products_collection.find(filter_q):
             product["id"] = str(product["_id"])
             del product["_id"]
             products.append(product)

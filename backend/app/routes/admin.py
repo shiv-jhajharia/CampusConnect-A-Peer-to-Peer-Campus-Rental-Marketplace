@@ -121,5 +121,26 @@ async def delete_user(user_id: str, admin: dict = Depends(get_current_admin)):
 
     # Optional: delete payments linked to orders
     await db.payments.delete_many({"user_id": user_id})
-
     return {"message": "User and related data deleted"}
+
+#Deleting Product directly as Admin
+@router.delete("/product/{product_id}")
+async def admin_delete_product(product_id: str, admin: dict = Depends(get_current_admin)):
+    result = await db.products.delete_one({"_id": ObjectId(product_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Optionally, delete associated orders
+    await db.orders.delete_many({"product_id": product_id})
+    return {"message": "Product and related orders deleted"}
+
+#Deleting Order directly as Admin
+@router.delete("/order/{order_id}")
+async def admin_delete_order(order_id: str, admin: dict = Depends(get_current_admin)):
+    result = await db.orders.delete_one({"_id": ObjectId(order_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Optionally, clear associated payments
+    await db.payments.delete_many({"order_id": order_id})
+    return {"message": "Order and related payments deleted"}

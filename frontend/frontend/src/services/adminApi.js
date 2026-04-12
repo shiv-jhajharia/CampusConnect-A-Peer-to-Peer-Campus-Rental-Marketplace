@@ -41,3 +41,30 @@ export const fetchOrders = async () => {
     if (!res.ok) throw new Error("API Failed");
     return res.json();
 };
+
+export const deleteUserApi = async (userId) => {
+  const res = await fetch(`${BASE_URL}/user/${userId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("API Failed");
+  return res.json();
+};
+
+export const deleteProductApi = async (productId) => {
+  const res = await fetch(`${BASE_URL}/product/${productId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("API Failed");
+  return res.json();
+};
+
+export const deleteOrderApi = async (orderId) => {
+  const res = await fetch(`${BASE_URL}/order/${orderId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("API Failed");
+  return res.json();
+};

@@ -7,6 +7,8 @@ from app.routes.products import router as product_router
 from app.routes import orders
 from app.routes import payments
 from app.routes import admin
+from app.routes import users
+from app.routes import messages
 
 
 app = FastAPI(title="CampusRent API")
@@ -33,6 +35,10 @@ app.include_router(orders.router)
 app.include_router(payments.router)
 
 app.include_router(admin.router)
+
+app.include_router(users.router)
+
+app.include_router(messages.router)
 
 @app.on_event("startup")
 async def create_indexes():

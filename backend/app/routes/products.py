@@ -10,48 +10,44 @@ router = APIRouter(prefix="/products", tags=["Products"])
 service = ProductService()
 
 
-# CREATE PRODUCT
-@router.post("/")
-async def create_product(
-    name: str = Form(...),
-    description: str = Form(None),
-    price: float = Form(...),
-    category: str = Form(...),
-    stock: int = Form(...),
-    image: UploadFile = File(None),
+# UPLOAD IMAGE SECURELY
+@router.post("/upload-image")
+async def upload_product_image(
+    file: UploadFile = File(...), 
     user=Depends(get_current_user)
 ):
-    image_url = None
+    try:
+        url = await upload_image(file)
+        return {"secure_url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if image:
-        image_url = await upload_image(image)
 
-    product_data = {
-        "name": name,
-        "description": description,
-        "price": price,
-        "category": category,
-        "stock": stock,
-        "image": image_url
-    }
-
+# CREATE PRODUCT
+@router.post("")
+async def create_product(
+    product: ProductCreate,
+    user=Depends(get_current_user)
+):
+    product_data = product.dict()
     return await service.create_product(product_data, user)
-#@router.post("/")
-#async def create_product(
-#    product: ProductCreate,
-#    user=Depends(get_current_user)
-#):
-    # 🔒 optional admin check
-    # if user["role"] != "admin":
-    #     raise HTTPException(status_code=403, detail="Not allowed")
-
-#    return await service.create_product(product, user)
 
 
-# GET ALL PRODUCTS
-@router.get("/")
-async def get_products():
-    return await service.get_products()
+from typing import Optional
+
+@router.get("")
+async def get_products(
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+):
+    return await service.get_products(search, category, min_price, max_price)
+
+# GET MY PRODUCTS
+@router.get("/my/all")
+async def get_my_products(user=Depends(get_current_user)):
+    return await service.get_my_products(user)
 
 
 # GET SINGLE PRODUCT

@@ -11,7 +11,7 @@ repo = OrderRepository()
 class OrderService:
 
     async def create_order(self, user_id: str, data):
-            # ✅ DATE VALIDATION (ADD HERE)
+        # ✅ DATE VALIDATION
         if data.start_date < date.today():
             raise HTTPException(
                 status_code=400,
@@ -32,6 +32,49 @@ class OrderService:
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
 
+        # ✅ Check product availability dates boundaries
+        if "available_from" in product and product["available_from"]:
+            
+            # MongoDB may return datetime.datetime. Convert to date if needed.
+            avail_from = product["available_from"]
+            if hasattr(avail_from, "date"):
+                avail_from = avail_from.date()
+            elif isinstance(avail_from, str):
+                avail_from = datetime.strptime(avail_from, "%Y-%m-%d").date()
+
+            if data.start_date < avail_from:
+                raise HTTPException(status_code=400, detail="Start date is before product availability.")
+                
+        if "available_to" in product and product["available_to"]:
+            avail_to = product["available_to"]
+            if hasattr(avail_to, "date"):
+                avail_to = avail_to.date()
+            elif isinstance(avail_to, str):
+                avail_to = datetime.strptime(avail_to, "%Y-%m-%d").date()
+
+            if data.end_date > avail_to:
+                raise HTTPException(status_code=400, detail="End date is after product availability.")
+
+        # 🚫 DOUBLE BOOKING PREVENTION
+        from datetime import datetime
+        # MongoDB native queries handle datetime comparisons consistently if stored as datetime. 
+        # By default Motor converts date to datetime(date.year, date.month, date.day)
+        start_datetime = datetime.combine(data.start_date, datetime.min.time())
+        end_datetime = datetime.combine(data.end_date, datetime.max.time())
+        
+        overlapping_order = await db.orders.find_one({
+            "product_id": data.product_id,
+            "status": {"$in": ["active", "paid"]},
+            "start_date": {"$lte": end_datetime},
+            "end_date": {"$gte": start_datetime}
+        })
+        
+        if overlapping_order:
+            raise HTTPException(
+                status_code=400,
+                detail="Product is already booked for these dates."
+            )
+
         # 📅 Calculate rental days
         days = (data.end_date - data.start_date).days
 
@@ -41,12 +84,12 @@ class OrderService:
         # 💰 Calculate price
         total_price = days * product["price"]
 
-        # 📦 Create order
+        # 📦 Create order (Store as datetime for reliable querying)
         order_data = {
             "user_id": user_id,
             "product_id": data.product_id,
-            "start_date": data.start_date,
-            "end_date": data.end_date,
+            "start_date": start_datetime,
+            "end_date": end_datetime,
             "days": days,
             "total_price": total_price,
             "status": "active",
@@ -63,6 +106,10 @@ class OrderService:
     
     async def get_user_orders(self, user_id: str):
         orders = await repo.get_orders_by_user(user_id)
+        return [order_helper(o) for o in orders]
+
+    async def get_user_sales(self, user_id: str):
+        orders = await repo.get_sales_by_user(user_id)
         return [order_helper(o) for o in orders]
 
     async def get_single_order(self, order_id: str, user_id: str):
