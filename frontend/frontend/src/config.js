@@ -1,2 +1,2 @@
 // src/config.js
-export const API_URL = "http://127.0.0.1:8000";
+export const API_URL = "campusconnect-a-peer-to-peer-campus-2q7l.onrender.com";
