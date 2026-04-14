@@ -10,19 +10,27 @@ class ProductRepository:
         result = await products_collection.insert_one(data)
         return str(result.inserted_id)
 
-    async def get_all_products(self):
+    async def get_all_products(self, query: dict = None):
         products = []
-        async for product in products_collection.find():
+        filter_q = query if query else {}
+
+        async for product in products_collection.find(filter_q):
             product["id"] = str(product["_id"])
+            del product["_id"]
             products.append(product)
+            
         return products
 
     async def get_product_by_id(self, product_id: str):
+        from bson import ObjectId
+
         product = await products_collection.find_one(
             {"_id": ObjectId(product_id)}
         )
         if product:
             product["id"] = str(product["_id"])
+            del product["_id"]
+
         return product
 
     async def update_product(self, product_id: str, data: dict):

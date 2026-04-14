@@ -11,23 +11,32 @@ service = OrderService()
 @router.post("/")
 async def create_order(order: OrderCreate, current_user=Depends(get_current_user)):
     try:
-        result = await service.create_order(
+        return await service.create_order(
             user_id=str(current_user["_id"]),
-            items=[item.dict() for item in order.items]
+            data=order   # ✅ pass full order directly
         )
-        return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.get("/")
 async def get_my_orders(current_user=Depends(get_current_user)):
     return await service.get_user_orders(str(current_user["_id"]))
 
+@router.get("/sales")
+async def get_my_sales(current_user=Depends(get_current_user)):
+    return await service.get_user_sales(str(current_user["_id"]))
+
 
 @router.get("/{order_id}")
 async def get_order(order_id: str, current_user=Depends(get_current_user)):
     try:
-        return await service.get_single_order(order_id)
+        return await service.get_single_order(order_id, str(current_user["_id"]))
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@router.put("/{order_id}/complete")
+async def complete_order(order_id: str, current_user=Depends(get_current_user)):
+    return await service.complete_order(
+        order_id,
+        str(current_user["_id"])   # ✅ pass user_id
+    )

@@ -1,5 +1,6 @@
 from app.db.mongodb import db
 from datetime import datetime
+from bson import ObjectId
 
 class PaymentRepository:
 
@@ -8,7 +9,7 @@ class PaymentRepository:
         payment = {
             "order_id": data.order_id,
             "amount": data.amount,
-            "status": "pending",
+            "status": "held",  #escrow
             "created_at": datetime.utcnow()
         }
         result = await db.payments.insert_one(payment)
@@ -18,6 +19,6 @@ class PaymentRepository:
     @staticmethod
     async def update_status(payment_id, status):
         await db.payments.update_one(
-            {"_id": payment_id},
+            {"_id": ObjectId(payment_id)},
             {"$set": {"status": status}}
         )
