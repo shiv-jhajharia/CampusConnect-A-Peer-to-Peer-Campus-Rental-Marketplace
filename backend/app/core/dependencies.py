@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.db.mongodb import db
 from bson import ObjectId
 from fastapi import Depends, HTTPException
-from app.core.dependencies import get_current_user
+#from app.core.dependencies import get_current_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
