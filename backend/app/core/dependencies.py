@@ -4,6 +4,8 @@ from jose import JWTError, jwt
 from app.core.config import settings
 from app.db.mongodb import db
 from bson import ObjectId
+from fastapi import Depends, HTTPException
+#from app.core.dependencies import get_current_user
 
 security = HTTPBearer()
 

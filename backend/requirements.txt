@@ -1,3 +1,13 @@
+fastapi
+uvicorn
+pymongo
+python-dotenv
+motor
+pydantic-settings
+passlib
+python-jose
+email-validator
+python-multipart
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
 
