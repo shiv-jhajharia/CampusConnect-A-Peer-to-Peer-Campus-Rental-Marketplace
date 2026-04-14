@@ -10,3 +10,4 @@ email-validator
 python-multipart
 google-auth
 google-auth-oauthlib
+cloudinary
