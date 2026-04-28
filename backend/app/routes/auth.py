@@ -25,7 +25,7 @@ async def google_login(data: GoogleToken):
             requests.Request(),
             GOOGLE_CLIENT_ID
         )
-        console.log(data.token)
+        #console.log(data.token)
 
         # ✅ Security check
         if idinfo["aud"] != GOOGLE_CLIENT_ID:
