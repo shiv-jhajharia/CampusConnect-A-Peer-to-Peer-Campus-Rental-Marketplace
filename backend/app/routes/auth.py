@@ -9,6 +9,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 GOOGLE_CLIENT_ID = "925682492325-kqgprm0nem7kgo03vrhke8gk70m50de7.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET_ID = "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"
 ADMIN_EMAILS = ["pholkar.btech2023@iujaipur.edu.in","sjhajharia.btech2023@iujaipur.edu.in"]
 
 class GoogleToken(BaseModel):
