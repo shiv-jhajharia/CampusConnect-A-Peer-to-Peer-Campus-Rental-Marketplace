@@ -5,6 +5,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from google.auth.exceptions import GoogleAuthError
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ async def google_login(data: GoogleToken):
             requests.Request(),
             GOOGLE_CLIENT_ID
         )
+        #console.log(data.token)
 
         # ✅ Security check
         if idinfo["aud"] != GOOGLE_CLIENT_ID:

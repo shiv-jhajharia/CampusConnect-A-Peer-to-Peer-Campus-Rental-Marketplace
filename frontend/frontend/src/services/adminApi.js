@@ -1,4 +1,6 @@
-const BASE_URL = "http://127.0.0.1:8000/admin";
+import { API_URL } from "../config";
+
+const BASE_URL = `${API_URL}/admin`;
 
 const getToken = () => localStorage.getItem("token");
 

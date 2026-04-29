@@ -15,7 +15,7 @@ app = FastAPI(title="CampusRent API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # allow frontend
+    allow_origins=["*"],  # allow frontend
     allow_credentials=True,
     allow_methods=["*"],  # allow OPTIONS, POST, GET
     allow_headers=["*"],
