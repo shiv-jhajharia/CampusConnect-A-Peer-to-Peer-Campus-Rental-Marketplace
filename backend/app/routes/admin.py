@@ -143,4 +143,4 @@ async def admin_delete_order(order_id: str, admin: dict = Depends(get_current_ad
     
     # Optionally, clear associated payments
     await db.payments.delete_many({"order_id": order_id})
-    return {"message": "Order and related payments deleted"}
+    return {"message": "Order and related payments deleted"}

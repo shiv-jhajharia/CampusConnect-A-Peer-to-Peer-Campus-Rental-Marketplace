@@ -11,14 +11,18 @@ repo = OrderRepository()
 class OrderService:
 
     async def create_order(self, user_id: str, data):
+        # Parse ISO strings to datetime objects
+        start_datetime = datetime.fromisoformat(data.start_date)
+        end_datetime = datetime.fromisoformat(data.end_date)
+        
         # ✅ DATE VALIDATION
-        if data.start_date < date.today():
+        if start_datetime.date() < date.today():
             raise HTTPException(
                 status_code=400,
                 detail="Start date cannot be in past"
             )
 
-        if data.end_date <= data.start_date:
+        if end_datetime <= start_datetime:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid date range"
@@ -42,7 +46,7 @@ class OrderService:
             elif isinstance(avail_from, str):
                 avail_from = datetime.strptime(avail_from, "%Y-%m-%d").date()
 
-            if data.start_date < avail_from:
+            if start_datetime.date() < avail_from:
                 raise HTTPException(status_code=400, detail="Start date is before product availability.")
                 
         if "available_to" in product and product["available_to"]:
@@ -52,16 +56,10 @@ class OrderService:
             elif isinstance(avail_to, str):
                 avail_to = datetime.strptime(avail_to, "%Y-%m-%d").date()
 
-            if data.end_date > avail_to:
+            if end_datetime.date() > avail_to:
                 raise HTTPException(status_code=400, detail="End date is after product availability.")
 
         # 🚫 DOUBLE BOOKING PREVENTION
-        from datetime import datetime
-        # MongoDB native queries handle datetime comparisons consistently if stored as datetime. 
-        # By default Motor converts date to datetime(date.year, date.month, date.day)
-        start_datetime = datetime.combine(data.start_date, datetime.min.time())
-        end_datetime = datetime.combine(data.end_date, datetime.max.time())
-        
         overlapping_order = await db.orders.find_one({
             "product_id": data.product_id,
             "status": {"$in": ["active", "paid"]},
@@ -75,14 +73,22 @@ class OrderService:
                 detail="Product is already booked for these dates."
             )
 
-        # 📅 Calculate rental days
-        days = (data.end_date - data.start_date).days
-
-        if days <= 0:
-            raise HTTPException(status_code=400, detail="Invalid date range")
+        # 📅 Calculate rental duration
+        price_type = product.get("price_type", "daily")
+        duration = 0
+        duration_type = "days"
+        
+        if price_type == "hourly":
+            diff_hours = (end_datetime - start_datetime).total_seconds() / 3600
+            duration = max(1, int(diff_hours)) # round to nearest hour, min 1
+            duration_type = "hours"
+        else:
+            diff_days = (end_datetime.date() - start_datetime.date()).days
+            duration = max(1, diff_days)
+            duration_type = "days"
 
         # 💰 Calculate price
-        total_price = days * product["price"]
+        total_price = duration * product["price"]
 
         # 📦 Create order (Store as datetime for reliable querying)
         order_data = {
@@ -90,7 +96,9 @@ class OrderService:
             "product_id": data.product_id,
             "start_date": start_datetime,
             "end_date": end_datetime,
-            "days": days,
+            "days": duration if duration_type == "days" else None, # for backwards compatibility
+            "duration": duration,
+            "duration_type": duration_type,
             "total_price": total_price,
             "status": "active",
             "created_at": datetime.utcnow()
@@ -98,10 +106,17 @@ class OrderService:
 
         order_id = await repo.create_order(order_data)
 
+        # Mark product as unavailable while rented
+        await db.products.update_one(
+            {"_id": ObjectId(data.product_id)},
+            {"$set": {"availability_status": False}}
+        )
+
         return {
             "order_id": str(order_id),
             "total_price": total_price,
-            "days": days
+            "duration": duration,
+            "duration_type": duration_type
         }
     
     async def get_user_orders(self, user_id: str):
@@ -137,6 +152,12 @@ class OrderService:
         await db.orders.update_one(
             {"_id": ObjectId(order_id)},
             {"$set": {"status": "completed"}}
+        )
+
+        # Mark product as available again after rental completes
+        await db.products.update_one(
+            {"_id": ObjectId(order["product_id"])},
+            {"$set": {"availability_status": True}}
         )
 
         payment = await db.payments.find_one({"order_id": order_id})

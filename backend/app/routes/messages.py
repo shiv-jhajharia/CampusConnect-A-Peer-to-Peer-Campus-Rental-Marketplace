@@ -66,7 +66,12 @@ async def get_inbox(user: dict = Depends(get_current_user)):
     # Aggregate to find unique users I've talked to
     # This is a bit complex for a simple inbox, but we want the list of unique partners
     pipeline = [
-        {"$match": {"$or": [{"sender_id": user_id}, {"receiver_id": user_id}]}},
+        # Exclude system-generated messages from the inbox
+        {"$match": {
+            "$or": [{"sender_id": user_id}, {"receiver_id": user_id}],
+            "sender_id": {"$ne": "system"},
+            "receiver_id": {"$ne": "system"}
+        }},
         {"$sort": {"timestamp": -1}},
         {
             "$group": {
@@ -97,9 +102,16 @@ async def get_inbox(user: dict = Depends(get_current_user)):
     # Populate user names for the inbox (optional but nice)
     results = []
     for item in inbox:
-        partner = await db.users.find_one({"_id": ObjectId(item["_id"])})
+        partner_id = item["_id"]
+        # Skip any non-ObjectId partner IDs (e.g. "system")
+        if not partner_id or partner_id == "system":
+            continue
+        try:
+            partner = await db.users.find_one({"_id": ObjectId(partner_id)})
+        except Exception:
+            continue
         results.append({
-            "user_id": item["_id"],
+            "user_id": partner_id,
             "user_name": partner.get("name", "User") if partner else "Unknown",
             "last_message": item["last_message"],
             "timestamp": item["timestamp"],

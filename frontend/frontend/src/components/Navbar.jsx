@@ -52,17 +52,15 @@ export default function Navbar() {
         
         {/* LEFT: Branding */}
         <div 
-          className="flex items-center gap-3 cursor-pointer group" 
+          className="flex flex-col cursor-pointer group origin-left" 
           onClick={() => navigate("/dashboard")}
         >
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300">
-            <Icons.Home className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">
-              CampusRent
-            </h1>
-            <p className="text-[9px] font-extrabold text-blue-500 uppercase tracking-widest mt-1">
+          <h1 className="text-3xl font-black tracking-tighter leading-none bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent group-hover:scale-[1.02] transition-transform duration-300">
+            CampusRent<span className="text-blue-600 drop-shadow-sm">.</span>
+          </h1>
+          <div className="flex items-center gap-2 mt-1.5 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="h-0.5 w-5 bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full"></div>
+            <p className="text-[9px] font-extrabold text-slate-500 uppercase tracking-[0.25em]">
               Secure Peer Rental
             </p>
           </div>

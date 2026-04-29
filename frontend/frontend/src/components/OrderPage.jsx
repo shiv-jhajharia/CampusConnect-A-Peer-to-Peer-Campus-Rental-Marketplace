@@ -39,7 +39,7 @@ export default function OrderPage() {
   const [startDate, setStartDate]     = useState("");
   const [endDate, setEndDate]         = useState("");
   const [total, setTotal]             = useState(0);
-  const [days, setDays]               = useState(0);
+  const [duration, setDuration]       = useState(0);
   const [loading, setLoading]         = useState(true);
   const [orderLoading, setOrderLoading] = useState(false);
   const [imgIndex, setImgIndex]       = useState(0);
@@ -71,17 +71,42 @@ export default function OrderPage() {
   const prevImg = () => setImgIndex((p) => (p === 0 ? imageList.length - 1 : p - 1));
   const nextImg = () => setImgIndex((p) => (p + 1) % imageList.length);
 
-  const calculateTotal = (start, end, price) => {
+  // Helper to get local YYYY-MM-DDTHH:mm string for datetime-local min attribute
+  const getLocalIsoString = () => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const localNow = new Date(now.getTime() - offsetMs);
+    return localNow.toISOString().slice(0, 16);
+  };
+
+  const getLocalDateString = () => {
+    return getLocalIsoString().split("T")[0];
+  };
+
+  const calculateTotal = (start, end, price, priceType = "daily") => {
     if (start && end && price) {
       const s = new Date(start);
       const e = new Date(end);
-      const diffDays = Math.ceil((e - s) / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        setDays(diffDays);
-        setTotal(diffDays * price);
+      
+      if (priceType === "hourly") {
+        const diffHours = (e - s) / (1000 * 60 * 60);
+        if (diffHours > 0) {
+          const hours = Math.max(1, Math.floor(diffHours));
+          setDuration(hours);
+          setTotal(hours * price);
+        } else {
+          setDuration(0);
+          setTotal(0);
+        }
       } else {
-        setDays(0);
-        setTotal(0);
+        const diffDays = Math.ceil((e - s) / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          setDuration(diffDays);
+          setTotal(diffDays * price);
+        } else {
+          setDuration(0);
+          setTotal(0);
+        }
       }
     }
   };
@@ -112,8 +137,9 @@ export default function OrderPage() {
           category: product.category || "General",
           startDate,
           endDate,
-          days,
-          pricePerDay: product.price,
+          duration,
+          durationType: product.price_type === "hourly" ? "hours" : "days",
+          pricePerUnit: product.price,
           total,
         }
       });
@@ -263,15 +289,15 @@ export default function OrderPage() {
               <p className="text-slate-500 font-medium leading-relaxed text-sm md:text-base">
                 {product.description || "High-quality academic gear available for rental from your campus peers."}
               </p>
-              {product.owner_email && (
+              {(product.owner_name || product.owner_email) && (
                 <div className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest pt-1">
                   <span className="opacity-60">Listed by:</span>
-                  <span className="text-blue-600">{product.owner_email.split("@")[0]}</span>
+                  <span className="text-blue-600">{product.owner_name || product.owner_email.split("@")[0]}</span>
                 </div>
               )}
               <div className="mt-auto pt-4 flex items-baseline gap-2">
                 <span className="text-4xl font-black text-blue-600">₹{product.price}</span>
-                <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">/ day</span>
+                <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">/ {product.price_type === 'hourly' ? 'hour' : 'day'}</span>
               </div>
             </div>
           </div>
@@ -287,13 +313,13 @@ export default function OrderPage() {
                 <div>
                   <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                     <CalendarIcon className="w-3.5 h-3.5 text-blue-500" />
-                    Rental Start Date
+                    Rental Start {product.price_type === 'hourly' ? 'Time' : 'Date'}
                   </label>
                   <input
-                    type="date"
-                    min={new Date().toISOString().split("T")[0]}
+                    type={product.price_type === 'hourly' ? 'datetime-local' : 'date'}
+                    min={product.price_type === 'hourly' ? getLocalIsoString() : getLocalDateString()}
                     value={startDate}
-                    onChange={(e) => { setStartDate(e.target.value); calculateTotal(e.target.value, endDate, product.price); }}
+                    onChange={(e) => { setStartDate(e.target.value); calculateTotal(e.target.value, endDate, product.price, product.price_type); }}
                     className={inputClass}
                   />
                 </div>
@@ -302,23 +328,23 @@ export default function OrderPage() {
                 <div>
                   <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                     <CalendarIcon className="w-3.5 h-3.5 text-blue-500" />
-                    Rental End Date
+                    Rental End {product.price_type === 'hourly' ? 'Time' : 'Date'}
                   </label>
                   <input
-                    type="date"
-                    min={startDate || new Date().toISOString().split("T")[0]}
+                    type={product.price_type === 'hourly' ? 'datetime-local' : 'date'}
+                    min={startDate || (product.price_type === 'hourly' ? getLocalIsoString() : getLocalDateString())}
                     value={endDate}
-                    onChange={(e) => { setEndDate(e.target.value); calculateTotal(startDate, e.target.value, product.price); }}
+                    onChange={(e) => { setEndDate(e.target.value); calculateTotal(startDate, e.target.value, product.price, product.price_type); }}
                     className={inputClass}
                   />
                 </div>
               </div>
 
               {/* Pricing Breakdown */}
-              {days > 0 && (
+              {duration > 0 && (
                 <div className="mt-6 bg-blue-50/60 border border-blue-100 rounded-2xl p-5 space-y-2 animate-slideIn">
                   <div className="flex justify-between text-sm font-bold text-slate-600">
-                    <span>₹{product.price} × {days} day{days !== 1 ? "s" : ""}</span>
+                    <span>₹{product.price} × {duration} {product.price_type === 'hourly' ? `hour${duration !== 1 ? 's' : ''}` : `day${duration !== 1 ? 's' : ''}`}</span>
                     <span>₹{total}</span>
                   </div>
                   <div className="border-t border-blue-100 pt-2 flex justify-between font-black text-slate-800">

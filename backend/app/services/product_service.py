@@ -9,7 +9,7 @@ class ProductService:
         #data = product.dict()
         data["owner_id"] = str(user["_id"])
         data["owner_email"] = user["email"]
-        #data["owner_name"] = user.get("name")
+        data["owner_name"] = user.get("name")
 
         return await repo.create_product(data)
 

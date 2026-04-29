@@ -78,6 +78,7 @@ export default function Orders() {
                   <th className="p-6 font-bold">Transaction Reference</th>
                   <th className="p-6 font-bold">User</th>
                   <th className="p-6 font-bold">Total Price</th>
+                  <th className="p-6 font-bold text-center">Payment</th>
                   <th className="p-6 font-bold text-center">Status</th>
                   <th className="p-6 font-bold text-right">Actions</th>
                 </tr>
@@ -100,11 +101,22 @@ export default function Orders() {
                     </td>
                     <td className="p-6 text-center">
                        <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg border ${
+                         o.payment_method?.toLowerCase() === "cash" || o.payment_method?.toLowerCase() === "cod"
+                           ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                           : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                       }`}>
+                         {o.payment_method === 'cash' ? 'COD' : (o.payment_method || "UPI")}
+                       </span>
+                    </td>
+                    <td className="p-6 text-center">
+                       <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg border ${
                          o.status === "completed"
                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                            : o.status === "active" || o.status === "paid"
                              ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                             : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                             : o.status === "cod"
+                               ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
+                               : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
                        }`}>
                          {o.status || "Pending"}
                        </span>

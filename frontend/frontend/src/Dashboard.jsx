@@ -6,6 +6,8 @@ import ProductList from "./components/ProductList";
 import EditProductModal from "./components/EditProductModal";
 import Loader from "./components/Loader";
 import ChatArea from "./components/ChatArea";
+import NotificationSidebar from "./components/NotificationSidebar";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { apiFetch } from "./utils/api";
 
 // ── Professional Icons (Lucide Style) ──
@@ -285,29 +287,35 @@ function AllProductsModal({ products, myProductIds, onClose, onChat, navigate })
                       <div className="flex items-center justify-between mt-4 gap-2">
                         <div>
                           <div className="text-xl font-black text-blue-600">₹{product.price}</div>
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">per day</div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">per {product.price_type === 'hourly' ? 'hour' : 'day'}</div>
                         </div>
                         <div className="flex gap-2">
-                          {!isOwner && (
-                            <button
-                              onClick={() => { onChat && onChat(product); onClose(); }}
-                              className="h-9 px-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5 active:scale-95"
-                            >
-                              <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                              Chat
-                            </button>
+                          {!isOwner ? (
+                            <>
+                              <button
+                                onClick={() => { onChat && onChat(product); onClose(); }}
+                                className="h-9 px-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center gap-1.5 active:scale-95"
+                              >
+                                <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                Chat
+                              </button>
+                              <button
+                                onClick={() => { navigate(`/product/${product.id || product._id}`); onClose(); }}
+                                disabled={!isAvailable}
+                                className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-1.5 active:scale-95 ${
+                                  isAvailable
+                                    ? "bg-slate-900 text-white hover:bg-black shadow-md"
+                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                }`}
+                              >
+                                View
+                              </button>
+                            </>
+                          ) : (
+                            <div className="h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center bg-slate-100 text-slate-400 border border-slate-200">
+                              Your Item
+                            </div>
                           )}
-                          <button
-                            onClick={() => { navigate(`/product/${product.id || product._id}`); onClose(); }}
-                            disabled={!isAvailable}
-                            className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-1.5 active:scale-95 ${
-                              isAvailable
-                                ? "bg-slate-900 text-white hover:bg-black shadow-md"
-                                : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                            }`}
-                          >
-                            View
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -404,6 +412,7 @@ export default function Dashboard() {
   const [sliderPaused, setSliderPaused] = useState(false);
   const [expandedView, setExpandedView] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const EXPAND_THRESHOLD = 7;
   const myProductIds = new Set(myProducts.map((p) => p.id || p._id));
@@ -475,10 +484,20 @@ export default function Dashboard() {
   const handleOpenChat = (product) => {
     setActiveChat({
       partnerId: product.owner_id || product.user_id,
-      partnerName: product.owner_email ? product.owner_email.split("@")[0] : "Owner",
+      partnerName: product.owner_name || (product.owner_email ? product.owner_email.split("@")[0] : "Owner"),
       productId: product.id || product._id,
       productName: product.name
     });
+  };
+
+  const handleOpenChatFromInbox = (chatDetails) => {
+    setActiveChat({ ...chatDetails, fromInbox: true });
+    setIsNotificationOpen(false);
+  };
+
+  const handleBackFromChat = () => {
+    setActiveChat(null);
+    setIsNotificationOpen(true);
   };
 
   if (loading) return <Loader fullScreen={true} />;
@@ -593,7 +612,20 @@ export default function Dashboard() {
       </div>
 
       {editingProduct && <EditProductModal product={editingProduct} onClose={() => setEditingProduct(null)} onSave={handleSaveEdit} />}
-      <ChatArea isOpen={!!activeChat} onClose={() => setActiveChat(null)} {...activeChat} />
+      <ChatArea 
+        isOpen={!!activeChat} 
+        onClose={() => setActiveChat(null)} 
+        onBack={activeChat?.fromInbox ? handleBackFromChat : null}
+        {...activeChat} 
+      />
+      
+      <NotificationSidebar 
+        isOpen={isNotificationOpen} 
+        setIsOpen={setIsNotificationOpen} 
+        onOpenChat={handleOpenChatFromInbox} 
+      />
+
+      <FeedbackWidget />
 
       {/* All Products Modal */}
       {expandedView && (

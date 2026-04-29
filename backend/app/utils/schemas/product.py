@@ -7,6 +7,7 @@ class ProductCreate(BaseModel):
     description: Optional[str] = None
     price: float = Field(..., gt=0)
     category: str
+    price_type: str = "daily"
     availability_status: bool = True
     image_url: Optional[str] = None          # first image (backward compat)
     image_urls: Optional[List[str]] = []     # all images (new multi-image support)
@@ -16,6 +17,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[float] = None
     category: Optional[str] = None
+    price_type: Optional[str] = None
     availability_status: Optional[bool] = None
     image_url: Optional[str] = None
     image_urls: Optional[List[str]] = None

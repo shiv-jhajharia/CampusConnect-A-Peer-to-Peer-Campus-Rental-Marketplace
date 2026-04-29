@@ -12,6 +12,11 @@ const Icons = {
       <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
     </svg>
   ),
+  ArrowLeft: (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+  ),
   Hand: (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v10"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
@@ -19,7 +24,7 @@ const Icons = {
   )
 };
 
-export default function ChatArea({ isOpen, onClose, partnerId, partnerName, productId, productName }) {
+export default function ChatArea({ isOpen, onClose, onBack, partnerId, partnerName, productId, productName }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
@@ -68,6 +73,11 @@ export default function ChatArea({ isOpen, onClose, partnerId, partnerName, prod
     <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-[100] border-l border-slate-100 flex flex-col transform transition-transform animate-slideIn">
       <div className="p-5 border-b border-slate-50 bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <button onClick={onBack} className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center transition-all group active:scale-90 mr-1" title="Back to Inbox">
+              <Icons.ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
           <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-lg border border-blue-100 uppercase tracking-tighter">
             {partnerName?.[0] || "?"}
           </div>

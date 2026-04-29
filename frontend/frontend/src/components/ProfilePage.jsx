@@ -64,20 +64,45 @@ export default function ProfilePage() {
   const [form, setForm] = useState({ name: "", picture: "" });
   const [inbox, setInbox] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
-  const [orders] = useState([
-    { id: 1, product: "DSLR Camera Lens", status: "Active" },
-    { id: 2, product: "Engineering Calculator", status: "Completed" }
-  ]);
+  const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [profile, myProds, myInbox] = await Promise.all([
-          apiFetch("/users/me"), apiFetch("/products/my/all"), apiFetch("/messages/inbox")
-        ]);
-        setUser(profile); setForm({ name: profile.name || "", picture: profile.picture || "" }); setProducts(myProds); setInbox(myInbox);
-      } catch (err) { console.error("Data load error:", err); } finally { setLoading(false); }
+        // Load profile first — this is critical
+        const profile = await apiFetch("/users/me");
+        setUser(profile);
+        setForm({ name: profile.name || "", picture: profile.picture || "" });
+      } catch (err) {
+        console.error("Profile load error:", err);
+      }
+
+      try {
+        const myProds = await apiFetch("/products/my/all");
+        setProducts(Array.isArray(myProds) ? myProds : []);
+      } catch (err) {
+        console.error("Products load error:", err);
+        setProducts([]);
+      }
+
+      try {
+        const myInbox = await apiFetch("/messages/inbox");
+        setInbox(Array.isArray(myInbox) ? myInbox : []);
+      } catch (err) {
+        console.error("Inbox load error:", err);
+        setInbox([]);
+      }
+
+      try {
+        const myOrders = await apiFetch("/orders/");
+        setOrders(Array.isArray(myOrders) ? myOrders : []);
+      } catch (err) {
+        console.error("Orders load error:", err);
+        setOrders([]);
+      }
+
+      setLoading(false);
     };
     loadData();
     const interval = setInterval(async () => {
@@ -195,10 +220,12 @@ export default function ProfilePage() {
                  Account Inquiries
                </h3>
                <div className="space-y-4">
-                 {inbox.length === 0 ? <p className="text-slate-400 text-xs font-bold italic py-4">No active inquiries at this time.</p> : inbox.map((msg) => (
+                 {inbox.filter(msg => msg.user_id !== 'system').length === 0
+                   ? <p className="text-slate-400 text-xs font-bold italic py-4">No active inquiries at this time.</p>
+                   : inbox.filter(msg => msg.user_id !== 'system').map((msg) => (
                    <div key={msg.user_id} onClick={() => setActiveChat({ partnerId: msg.user_id, partnerName: msg.user_name })} className="flex items-center justify-between p-5 bg-white border border-slate-50 rounded-2xl hover:border-blue-300 hover:shadow-2xl transition-all cursor-pointer group">
                       <div className="flex items-center gap-5">
-                         <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">{msg.user_name[0]}</div>
+                         <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">{(msg.user_name || "?")[0]}</div>
                          <div>
                             <h4 className="font-black text-slate-900 text-sm tracking-tight">{msg.user_name}</h4>
                             <p className="text-xs text-slate-400 font-medium line-clamp-1">{msg.last_message}</p>
@@ -216,15 +243,25 @@ export default function ProfilePage() {
                  Rental History
                </h3>
                <div className="space-y-4">
-                 {orders.map((o) => (
-                   <div key={o.id} className="flex justify-between items-center p-6 bg-white rounded-2xl border border-slate-50">
-                     <div>
-                        <h4 className="font-black text-slate-900 text-sm tracking-tight">{o.product}</h4>
-                        <p className="text-[10px] font-black text-slate-300 uppercase mt-1">Order #CR-{o.id}209</p>
+                 {orders.length === 0 ? (
+                   <p className="text-slate-400 text-xs font-bold italic py-4">You have not rented anything yet.</p>
+                 ) : (
+                   orders.map((o) => (
+                     <div key={o.id || Math.random()} className="flex justify-between items-center p-6 bg-white rounded-2xl border border-slate-50">
+                       <div>
+                          <h4 className="font-black text-slate-900 text-sm tracking-tight">{o.product_name || "Unknown Product"}</h4>
+                          <p className="text-[10px] font-black text-slate-300 uppercase mt-1">Order #CR-{o.id ? o.id.substring(Math.max(0, o.id.length - 6)) : "------"}</p>
+                       </div>
+                       <span className={`px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-full cursor-default ${
+                         o.status === 'active' || o.status === 'paid' ? 'bg-blue-600 text-white shadow-lg'
+                         : o.status === 'cod' ? 'bg-purple-600 text-white shadow-lg'
+                         : 'bg-slate-100 text-slate-400'
+                       }`}>
+                         {o.status === 'cod' ? 'COD' : o.status}
+                       </span>
                      </div>
-                     <span className={`px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-full cursor-default ${o.status === 'Active' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}>{o.status}</span>
-                   </div>
-                 ))}
+                   ))
+                 )}
                </div>
             </div>
 
@@ -240,7 +277,7 @@ export default function ProfilePage() {
                  {products.map((p) => (
                    <div key={p.id || p._id} className="flex justify-between items-center p-6 bg-white rounded-2xl border border-slate-50">
                      <h4 className="font-black text-slate-900 text-sm tracking-tight">{p.name}</h4>
-                     <div className="text-right"><span className="text-lg font-black text-slate-900">₹{p.price}</span><span className="text-[9px] font-black text-slate-400 block uppercase">per day</span></div>
+                     <div className="text-right"><span className="text-lg font-black text-slate-900">₹{p.price}</span><span className="text-[9px] font-black text-slate-400 block uppercase">per {p.price_type === 'hourly' ? 'hour' : 'day'}</span></div>
                    </div>
                  ))}
                </div>

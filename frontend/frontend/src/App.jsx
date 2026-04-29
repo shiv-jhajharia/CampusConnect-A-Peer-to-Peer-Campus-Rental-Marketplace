@@ -5,6 +5,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import Users from "./admin/Users";
 import Products from "./admin/Products";
 import Orders from "./admin/Orders";
+import Feedbacks from "./admin/Feedbacks";
 
 import Login from './Login';
 import Dashboard from './Dashboard';
@@ -15,6 +16,7 @@ import PaymentPage from './components/PaymentPage';
 import ProfilePage from './components/ProfilePage';
 import MyOrdersPage from './components/MyOrdersPage';
 import ProductCard from './components/ProductCard';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
@@ -22,16 +24,18 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* 👤 USER ROUTES */}
+          {/* 🌐 PUBLIC ROUTES */}
           <Route path='/' element={<Login />} />
           <Route path='/dashboard' element={<Dashboard />} />
-          <Route path='/add-product' element={<AddProduct />} />
           <Route path='/products' element={<ProductList />} />
-          <Route path='/my-orders' element={<MyOrdersPage />} />
-          <Route path='/order/:id' element={<OrderPage />} />
-          <Route path='/product/:id' element={<OrderPage />} />
-          <Route path='/payment' element={<PaymentPage />} />
-          <Route path='/profile' element={<ProfilePage />} />
+
+          {/* 🔒 PROTECTED USER ROUTES */}
+          <Route path='/add-product' element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
+          <Route path='/my-orders' element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
+          <Route path='/order/:id' element={<ProtectedRoute><OrderPage /></ProtectedRoute>} />
+          <Route path='/product/:id' element={<ProtectedRoute><OrderPage /></ProtectedRoute>} />
+          <Route path='/payment' element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+          <Route path='/profile' element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
           {/* 🔐 ADMIN ROUTES */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -39,6 +43,7 @@ const App = () => {
             <Route path="users" element={<Users />} />
             <Route path="products" element={<Products />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="feedbacks" element={<Feedbacks />} />
           </Route>
         </Routes>
       </Router>

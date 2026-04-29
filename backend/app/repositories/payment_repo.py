@@ -9,7 +9,8 @@ class PaymentRepository:
         payment = {
             "order_id": data.order_id,
             "amount": data.amount,
-            "status": "held",  #escrow
+            "payment_method": getattr(data, "payment_method", "upi"),
+            "status": "held" if getattr(data, "payment_method", "upi") == "upi" else "pending",
             "created_at": datetime.utcnow()
         }
         result = await db.payments.insert_one(payment)

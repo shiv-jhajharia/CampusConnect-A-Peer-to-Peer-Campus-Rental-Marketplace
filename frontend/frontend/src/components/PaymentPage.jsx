@@ -53,8 +53,9 @@ export default function PaymentPage() {
     category     = "General",
     startDate    = "",
     endDate      = "",
-    days         = 0,
-    pricePerDay  = 0,
+    duration     = 0,
+    durationType = "days",
+    pricePerUnit = 0,
     total        = 0,
   } = order;
 
@@ -65,9 +66,9 @@ export default function PaymentPage() {
       const order_id = localStorage.getItem("order_id");
       if (!order_id) throw new Error("No active order found. Please go back and try again.");
 
-      await apiFetch("/payments", {
+      await apiFetch("/payments/", {
         method: "POST",
-        body: { order_id, amount: total || 0 }
+        body: { order_id, amount: total || 0, payment_method: method }
       });
 
       setSuccess(true);
@@ -153,8 +154,8 @@ export default function PaymentPage() {
                     <CalendarDays className="w-3.5 h-3.5 text-blue-400" />
                     <span>{formatDate(startDate)}</span>
                     <span className="text-slate-300">→</span>
-                    <span>{formatDate(endDate)}</span>
-                    {days > 0 && <span className="text-slate-400">({days} day{days !== 1 ? "s" : ""})</span>}
+                    <span>{durationType === 'hours' ? new Date(endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : formatDate(endDate)}</span>
+                    {duration > 0 && <span className="text-slate-400">({duration} {durationType === 'hours' ? `hour${duration !== 1 ? 's' : ''}` : `day${duration !== 1 ? 's' : ''}`})</span>}
                   </div>
                 </div>
               </div>
@@ -162,7 +163,7 @@ export default function PaymentPage() {
               {/* Price breakdown */}
               <div className="border-t border-slate-100 px-5 py-4 space-y-2 bg-slate-50/50">
                 <div className="flex justify-between text-sm text-slate-500 font-semibold">
-                  <span>₹{pricePerDay} × {days} day{days !== 1 ? "s" : ""}</span>
+                  <span>₹{pricePerUnit} × {duration} {durationType === 'hours' ? `hour${duration !== 1 ? 's' : ''}` : `day${duration !== 1 ? 's' : ''}`}</span>
                   <span>₹{total}</span>
                 </div>
                 <div className="flex justify-between font-black text-slate-900 text-lg pt-1 border-t border-slate-200 mt-1">

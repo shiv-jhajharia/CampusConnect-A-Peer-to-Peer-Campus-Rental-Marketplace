@@ -6,6 +6,24 @@ import CategorySelect from "./CategorySelect";
 
 const MAX_IMAGES = 5;
 
+// ── Icons ──
+const CalendarDays = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+    <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
+    <line x1="3" x2="21" y1="10" y2="10"/>
+    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+  </svg>
+);
+
+const Clock = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
 export default function AddProduct() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -15,6 +33,7 @@ export default function AddProduct() {
     name: "",
     description: "",
     price: "",
+    price_type: "daily",
     category: "Electronics",
     available: true,
   });
@@ -113,6 +132,7 @@ export default function AddProduct() {
           description: form.description || "New Item",
           price: Number(form.price),
           category: form.category,
+          price_type: form.price_type,
           availability_status: form.available,
           image_url: urls[0] || "",   // first image — backward compat
           image_urls: urls,           // all images — new field
@@ -179,7 +199,7 @@ export default function AddProduct() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Price (₹ per day)</label>
+                <label className={labelClass}>Price (₹ per {form.price_type === 'hourly' ? 'hour' : 'day'})</label>
                 <input
                   type="number"
                   name="price"
@@ -190,6 +210,22 @@ export default function AddProduct() {
                   min="1"
                   className={inputClass}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Pricing Type</label>
+              <div className="flex gap-4 mt-2">
+                <label className={`flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${form.price_type === 'daily' ? 'bg-blue-50 border-blue-400 text-blue-700 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}>
+                  <input type="radio" name="price_type" value="daily" checked={form.price_type === 'daily'} onChange={handleChange} className="hidden" />
+                  <CalendarDays className="w-5 h-5" />
+                  Per Day
+                </label>
+                <label className={`flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all ${form.price_type === 'hourly' ? 'bg-blue-50 border-blue-400 text-blue-700 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}>
+                  <input type="radio" name="price_type" value="hourly" checked={form.price_type === 'hourly'} onChange={handleChange} className="hidden" />
+                  <Clock className="w-5 h-5" />
+                  Per Hour
+                </label>
               </div>
             </div>
 

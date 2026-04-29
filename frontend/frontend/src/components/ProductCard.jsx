@@ -91,11 +91,24 @@ export default function ProductCard({ product, isOwner = false, onDelete, onEdit
           </div>
         )}
 
+        {/* ── UNAVAILABLE Overlay ── */}
+        {!isAvailable && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-rose-900/60 backdrop-blur-[2px]">
+            <div className="flex items-center gap-2 bg-rose-600 text-white px-4 py-2 rounded-2xl shadow-xl border border-rose-400/50">
+              <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+              </svg>
+              <span className="text-xs font-black uppercase tracking-widest">Currently Rented</span>
+            </div>
+            <p className="text-white/80 text-[10px] font-bold mt-2 uppercase tracking-widest">Not Available for Booking</p>
+          </div>
+        )}
+
         {/* Floating Message Icon (Mobile/Compact) */}
         {!isOwner && (
           <button
             onClick={(e) => { e.stopPropagation(); onChat && onChat(product); }}
-            className={`absolute top-4 right-4 z-30 w-11 h-11 rounded-2xl flex items-center justify-center transition-all bg-blue-600 text-white shadow-xl hover:scale-110 active:scale-95 group/chat ${inSlider && "md:hidden"}`}
+            className={`absolute top-4 right-4 z-30 w-11 h-11 rounded-2xl flex items-center justify-center transition-all bg-blue-600 text-white shadow-xl hover:scale-110 active:scale-95 group/chat ${inSlider && "md:hidden"} ${!isAvailable ? "hidden" : ""}`}
           >
             <Icons.Message className="w-5 h-5 group-hover/chat:animate-pulse" />
           </button>
@@ -118,7 +131,7 @@ export default function ProductCard({ product, isOwner = false, onDelete, onEdit
             </div>
             <div className="text-right shrink-0">
                <div className={`${inSlider ? "text-3xl" : "text-2xl"} font-black text-blue-600`}>₹{product.price}</div>
-               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">per day</div>
+               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">per {product.price_type === 'hourly' ? 'hour' : 'day'}</div>
             </div>
           </div>
 
@@ -130,7 +143,7 @@ export default function ProductCard({ product, isOwner = false, onDelete, onEdit
              <div className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest pt-2">
                 <span className="opacity-60">Verified Owner:</span>
                 <span className="text-blue-600 decoration-blue-600/30 underline decoration-2 underline-offset-4">
-                   {product.owner_email ? product.owner_email.split("@")[0] : "Admin"}
+                   {product.owner_name || (product.owner_email ? product.owner_email.split("@")[0] : "Admin")}
                 </span>
              </div>
           )}
@@ -138,10 +151,14 @@ export default function ProductCard({ product, isOwner = false, onDelete, onEdit
 
         <div className="mt-6 flex flex-col md:flex-row items-center gap-3">
            <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border w-full md:w-auto justify-center ${
-             isAvailable ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+             isAvailable
+               ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+               : "bg-rose-100 text-rose-700 border-rose-200 shadow-sm shadow-rose-100"
            }`}>
-             <div className={`w-2 h-2 rounded-full ${isAvailable ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}></div>
-             {isAvailable ? "In Stock" : "Unavailable"}
+             <div className={`w-2 h-2 rounded-full ${
+               isAvailable ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+             }`} />
+             {isAvailable ? "Available" : "Currently Rented"}
            </div>
 
             <div className="flex items-center gap-3 w-full justify-end">

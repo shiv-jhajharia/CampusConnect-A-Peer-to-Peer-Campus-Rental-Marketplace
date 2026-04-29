@@ -5,6 +5,7 @@ from datetime import datetime
 class PaymentCreate(BaseModel):
     order_id: str
     amount: float
+    payment_method: str = "upi"
 
 class PaymentResponse(BaseModel):
     id: str

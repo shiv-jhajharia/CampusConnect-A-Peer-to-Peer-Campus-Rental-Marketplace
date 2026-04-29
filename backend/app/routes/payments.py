@@ -5,6 +5,7 @@ from app.models.payments import payment_model
 from app.core.dependencies import get_current_user
 from app.db.mongodb import db
 from bson import ObjectId
+from datetime import datetime
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -16,6 +17,43 @@ async def create_payment(
     current_user: dict = Depends(get_current_user)
 ):
     payment = await PaymentService.create_payment(data)
+
+    # Send Notifications and Update Order Status
+    order = await db.orders.find_one({"_id": ObjectId(data.order_id)})
+    if order:
+        product = await db.products.find_one({"_id": ObjectId(order["product_id"])})
+        if product:
+            duration = order.get("duration", order.get("days", 1))
+            duration_type = order.get("duration_type", "days")
+            product_name = product.get("name", "Unknown Product")
+            payment_method = getattr(data, "payment_method", "upi").upper()
+            
+            buyer_msg = {
+                "sender_id": "system",
+                "receiver_id": str(current_user["_id"]),
+                "product_id": str(product["_id"]),
+                "text": f"SYSTEM: Order Placed! You have rented {product_name} for {duration} {duration_type}. Payment Method: {payment_method}.",
+                "timestamp": datetime.utcnow(),
+                "is_read": False
+            }
+            
+            owner_msg = {
+                "sender_id": "system",
+                "receiver_id": product["owner_id"],
+                "product_id": str(product["_id"]),
+                "text": f"SYSTEM: Your item {product_name} has been rented for {duration} {duration_type} by {current_user.get('name', current_user.get('email', 'User'))}. Payment Method: {payment_method}.",
+                "timestamp": datetime.utcnow(),
+                "is_read": False
+            }
+            
+            await db.messages.insert_many([buyer_msg, owner_msg])
+            
+            new_status = "paid" if payment_method == "UPI" else "cod"
+            await db.orders.update_one(
+                {"_id": ObjectId(data.order_id)},
+                {"$set": {"status": new_status}}
+            )
+
     return payment_model(payment)
 
 
