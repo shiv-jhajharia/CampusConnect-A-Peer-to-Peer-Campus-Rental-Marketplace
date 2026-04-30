@@ -44,13 +44,32 @@ app.include_router(messages.router)
 app.include_router(feedback.router)
 
 @app.on_event("startup")
-async def create_indexes():
+async def startup_event():
     print("Creating indexes...")
-    
     await db.products.create_index("owner_id")
     await db.orders.create_index("user_id")
-
     print("Indexes created successfully")
+
+    print("Healing stuck products...")
+    try:
+        unavailable_products = await db.products.find({"availability_status": False}).to_list(1000)
+        for prod in unavailable_products:
+            prod_id_str = str(prod["_id"])
+            active_order = await db.orders.find_one({
+                "$or": [
+                    {"product_id": prod_id_str, "status": {"$in": ["active", "paid", "cod", "pending"]}},
+                    {"product_id": prod["_id"], "status": {"$in": ["active", "paid", "cod", "pending"]}}
+                ]
+            })
+            if not active_order:
+                print(f"Fixing stuck availability for product {prod_id_str}")
+                await db.products.update_one(
+                    {"_id": prod["_id"]},
+                    {"$set": {"availability_status": True}}
+                )
+        print("Healing complete.")
+    except Exception as e:
+        print("Error during healing:", e)
 
 @app.get("/")
 async def test_db():

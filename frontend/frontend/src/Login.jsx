@@ -92,18 +92,31 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="flex justify-center md:justify-start min-h-[50px] items-center">
+          <div className="flex justify-center md:justify-start min-h-[70px] items-center">
             {loading ? (
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 flex items-center justify-center relative">
+                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : (
-              <div className="relative z-20 w-auto hover:scale-105 transition-transform">
-                <GoogleLogin
-                  onSuccess={handleSuccess}
-                  onError={() => setErrorMsg("Login failed locally.")}
-                  theme="filled_black"
-                  shape="pill"
-                  size="large"
-                />
+              <div className="relative z-20 group cursor-pointer w-full max-w-[340px]">
+                {/* Outer animated glow */}
+                <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 rounded-full blur-md opacity-40 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
+                
+                {/* Inner button wrapper */}
+                <div className="relative bg-slate-900 rounded-full p-[2px] shadow-[0_0_40px_-10px_rgba(79,70,229,0.4)]">
+                  <div className="bg-slate-950 rounded-full p-1.5 border border-white/5 group-hover:border-white/20 transition-all flex justify-center">
+                    <GoogleLogin
+                      onSuccess={handleSuccess}
+                      onError={() => setErrorMsg("Login failed locally.")}
+                      theme="filled_black"
+                      shape="pill"
+                      size="large"
+                      width="320"
+                      text="continue_with"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>

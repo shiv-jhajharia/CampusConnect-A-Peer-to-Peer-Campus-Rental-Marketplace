@@ -50,6 +50,11 @@ const Icons = {
     <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
     </svg>
+  ),
+  Trash: (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+    </svg>
   )
 };
 
@@ -66,6 +71,36 @@ export default function ProfilePage() {
   const [activeChat, setActiveChat] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [isDeletingId, setIsDeletingId] = useState(null);
+
+  const initiateDelete = (e, partnerId) => {
+    e.stopPropagation();
+    setConfirmDeleteId(partnerId);
+  };
+
+  const cancelDelete = (e) => {
+    e.stopPropagation();
+    setConfirmDeleteId(null);
+  };
+
+  const confirmDelete = async (e, partnerId) => {
+    e.stopPropagation();
+    setConfirmDeleteId(null);
+    setIsDeletingId(partnerId);
+    
+    // Aesthetic deletion animation delay
+    setTimeout(async () => {
+      try {
+        await apiFetch(`/messages/conversation/${partnerId}?t=${Date.now()}`, { method: "DELETE" });
+        setInbox((prev) => prev.filter((item) => item.user_id !== partnerId));
+      } catch (err) {
+        alert("Failed to delete conversation: " + err.message);
+      } finally {
+        setIsDeletingId(null);
+      }
+    }, 400); // Match CSS transition duration
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -223,16 +258,55 @@ export default function ProfilePage() {
                  {inbox.filter(msg => msg.user_id !== 'system').length === 0
                    ? <p className="text-slate-400 text-xs font-bold italic py-4">No active inquiries at this time.</p>
                    : inbox.filter(msg => msg.user_id !== 'system').map((msg) => (
-                   <div key={msg.user_id} onClick={() => setActiveChat({ partnerId: msg.user_id, partnerName: msg.user_name })} className="flex items-center justify-between p-5 bg-white border border-slate-50 rounded-2xl hover:border-blue-300 hover:shadow-2xl transition-all cursor-pointer group">
-                      <div className="flex items-center gap-5">
-                         <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">{(msg.user_name || "?")[0]}</div>
-                         <div>
-                            <h4 className="font-black text-slate-900 text-sm tracking-tight">{msg.user_name}</h4>
-                            <p className="text-xs text-slate-400 font-medium line-clamp-1">{msg.last_message}</p>
-                         </div>
+                    <div 
+                      key={msg.user_id} 
+                      className={`transition-all duration-400 ease-in-out overflow-hidden transform ${
+                        isDeletingId === msg.user_id 
+                          ? "opacity-0 scale-90 -translate-x-full h-0 mb-0 border-0 p-0" 
+                          : "h-auto mb-4 opacity-100 scale-100 translate-x-0"
+                      }`}
+                    >
+                      <div onClick={() => { if (confirmDeleteId === msg.user_id) return; setActiveChat({ partnerId: msg.user_id, partnerName: msg.user_name })}} className="relative flex items-center justify-between p-5 bg-white border border-slate-50 rounded-2xl hover:border-blue-300 hover:shadow-2xl transition-all cursor-pointer group">
+                        <div className="flex items-center gap-5">
+                           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">{(msg.user_name || "?")[0]}</div>
+                           <div>
+                              <h4 className="font-black text-slate-900 text-sm tracking-tight">{msg.user_name}</h4>
+                              <p className="text-xs text-slate-400 font-medium line-clamp-1">{msg.last_message}</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {msg.unread_count > 0 && <span className="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full animate-pulse tracking-widest">NEW</span>}
+                          {confirmDeleteId !== msg.user_id && (
+                            <button
+                              onClick={(e) => initiateDelete(e, msg.user_id)}
+                              className="w-8 h-8 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shrink-0"
+                              title="Delete Conversation"
+                            >
+                              <Icons.Trash className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Inline Confirmation UI */}
+                        {confirmDeleteId === msg.user_id && (
+                          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl flex items-center justify-end pr-4 gap-3 z-10 border border-rose-100 transition-opacity duration-300">
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-widest hidden sm:block mr-2">Delete Chat?</span>
+                            <button 
+                              onClick={(e) => cancelDelete(e)}
+                              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={(e) => confirmDelete(e, msg.user_id)}
+                              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white shadow-lg shadow-rose-500/30 hover:bg-rose-600 transition-all hover:scale-105 active:scale-95"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {msg.unread_count > 0 && <span className="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full animate-pulse tracking-widest">NEW</span>}
-                   </div>
+                    </div>
                  ))}
                </div>
             </div>

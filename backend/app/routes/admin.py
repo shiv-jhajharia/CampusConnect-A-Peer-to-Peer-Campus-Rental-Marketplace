@@ -137,10 +137,57 @@ async def admin_delete_product(product_id: str, admin: dict = Depends(get_curren
 #Deleting Order directly as Admin
 @router.delete("/order/{order_id}")
 async def admin_delete_order(order_id: str, admin: dict = Depends(get_current_admin)):
-    result = await db.orders.delete_one({"_id": ObjectId(order_id)})
-    if result.deleted_count == 0:
+    # Fetch the order first so we can restore the product's availability
+    order = await db.orders.find_one({"_id": ObjectId(order_id)})
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
-    # Optionally, clear associated payments
+
+    product_id = order.get("product_id")
+
+    # Delete the order
+    await db.orders.delete_one({"_id": ObjectId(order_id)})
+
+    # Clear associated payments
     await db.payments.delete_many({"order_id": order_id})
-    return {"message": "Order and related payments deleted"}
+
+    # ✅ Restore product availability so the slider badge disappears
+    if product_id:
+        updated = False
+        try:
+            result = await db.products.update_one(
+                {"_id": ObjectId(product_id)},
+                {"$set": {"availability_status": True}}
+            )
+            updated = result.modified_count > 0
+        except Exception:
+            pass
+        # Fallback: try matching _id as plain string (edge case)
+        if not updated:
+            await db.products.update_one(
+                {"_id": product_id},
+                {"$set": {"availability_status": True}}
+            )
+
+    return {"message": "Order and related payments deleted; product availability restored"}
+
+# Fix stuck availability (Self-Healing Endpoint)
+@router.get("/fix-availability")
+async def fix_availability(admin: dict = Depends(get_current_admin)):
+    fixed_count = 0
+    unavailable_products = await db.products.find({"availability_status": False}).to_list(1000)
+    for prod in unavailable_products:
+        prod_id_str = str(prod["_id"])
+        active_order = await db.orders.find_one({
+            "$or": [
+                {"product_id": prod_id_str, "status": {"$in": ["active", "paid", "cod", "pending"]}},
+                {"product_id": prod["_id"], "status": {"$in": ["active", "paid", "cod", "pending"]}}
+            ]
+        })
+        if not active_order:
+            await db.products.update_one(
+                {"_id": prod["_id"]},
+                {"$set": {"availability_status": True}}
+            )
+            fixed_count += 1
+            
+    return {"message": f"Healed {fixed_count} stuck products."}

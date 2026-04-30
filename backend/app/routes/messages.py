@@ -119,3 +119,66 @@ async def get_inbox(user: dict = Depends(get_current_user)):
         })
         
     return results
+
+@router.delete("/conversation/{other_user_id}")
+async def delete_thread_delete(other_user_id: str, user: dict = Depends(get_current_user)):
+    user_id = str(user["_id"])
+    try:
+        other_user_oid = ObjectId(other_user_id)
+    except:
+        other_user_oid = other_user_id
+        
+    try:
+        user_oid = ObjectId(user_id)
+    except:
+        user_oid = user_id
+
+    query = {
+        "$or": [
+            # Match string combinations
+            {"sender_id": user_id, "receiver_id": other_user_id},
+            {"sender_id": other_user_id, "receiver_id": user_id},
+            # Match ObjectId combinations (in case older messages were saved differently)
+            {"sender_id": user_oid, "receiver_id": other_user_oid},
+            {"sender_id": other_user_oid, "receiver_id": user_oid},
+            # Cross combinations
+            {"sender_id": user_id, "receiver_id": other_user_oid},
+            {"sender_id": other_user_oid, "receiver_id": user_id},
+            {"sender_id": user_oid, "receiver_id": other_user_id},
+            {"sender_id": other_user_id, "receiver_id": user_oid}
+        ]
+    }
+    result = await db.messages.delete_many(query)
+    return {"message": f"Deleted {result.deleted_count} messages"}
+
+from pydantic import BaseModel
+class DeleteBody(BaseModel):
+    other_user_id: str
+
+@router.post("/delete-conversation")
+async def delete_thread_post(data: DeleteBody, user: dict = Depends(get_current_user)):
+    user_id = str(user["_id"])
+    try:
+        other_user_oid = ObjectId(data.other_user_id)
+    except:
+        other_user_oid = data.other_user_id
+        
+    try:
+        user_oid = ObjectId(user_id)
+    except:
+        user_oid = user_id
+
+    query = {
+        "$or": [
+            {"sender_id": user_id, "receiver_id": data.other_user_id},
+            {"sender_id": data.other_user_id, "receiver_id": user_id},
+            {"sender_id": user_oid, "receiver_id": other_user_oid},
+            {"sender_id": other_user_oid, "receiver_id": user_oid},
+            {"sender_id": user_id, "receiver_id": other_user_oid},
+            {"sender_id": other_user_oid, "receiver_id": user_id},
+            {"sender_id": user_oid, "receiver_id": data.other_user_id},
+            {"sender_id": data.other_user_id, "receiver_id": user_oid}
+        ]
+    }
+    result = await db.messages.delete_many(query)
+    return {"message": f"Deleted {result.deleted_count} messages"}

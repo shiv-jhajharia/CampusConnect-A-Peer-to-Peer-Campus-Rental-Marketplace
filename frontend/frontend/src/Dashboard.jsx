@@ -439,6 +439,25 @@ export default function Dashboard() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Re-fetch products when the user returns to this tab (e.g. after admin removes an order)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchProducts();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", fetchProducts);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", fetchProducts);
+    };
+  }, [fetchProducts]);
+
+  // Poll every 30 s so availability badges stay live even with Dashboard already open
+  useEffect(() => {
+    const poll = setInterval(fetchProducts, 30000);
+    return () => clearInterval(poll);
+  }, [fetchProducts]);
+
   useEffect(() => {
     const fetchMyProducts = async () => {
       try {
